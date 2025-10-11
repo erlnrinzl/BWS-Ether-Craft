@@ -63,8 +63,15 @@ html {
 .logo-text {
   font-size: 24px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 4px;
   color: var(--primary-color);
+}
+
+.logo-text-footer {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: white;
 }
 
 .img-logo{
@@ -497,6 +504,8 @@ section {
 
 .footer-content {
   display: flex;
+  flex-direction: column;
+  text-align: center;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 32px;
@@ -703,11 +712,6 @@ section {
 
   .custom-features {
     padding: 0 20px;
-  }
-
-  .footer-content {
-    flex-direction: column;
-    text-align: center;
   }
 
   .modal-content {
