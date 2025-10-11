@@ -664,6 +664,39 @@ section {
   font-size: 28px;
 }
 
+/* --- Reviews Section --- */
+.reviews-section {
+  padding: 80px 0;
+  background: var(--bg-light);
+}
+
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 40px;
+}
+
+.review-card {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--accent-color);
+}
+
+.review-quote {
+  font-style: italic;
+  color: var(--text-color);
+  margin-bottom: 24px;
+  line-height: 1.7;
+}
+
+.review-author {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
 @media (max-width: 768px) {
   .mobile-menu-toggle {
     display: flex;
@@ -720,6 +753,10 @@ section {
 
   .modal-title {
     font-size: 24px;
+  }
+
+  .reviews-grid {
+    grid-template-columns: repeat(1, 1fr);
   }
 }
 
