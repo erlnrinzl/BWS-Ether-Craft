@@ -1007,6 +1007,8 @@ section {
   background: var(--bg-light);
 }
 
+
+
 @media (max-width: 768px) {
   .page-hero-title {
     font-size: 32px;
