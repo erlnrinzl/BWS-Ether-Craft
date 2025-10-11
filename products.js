@@ -1,274 +1,262 @@
-import './style.css'
-import { createClient } from '@supabase/supabase-js'
+import './style.css';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Nomor WhatsApp untuk tujuan pemesanan
+const whatsappNumber = '6281234567890';
 
-let allProducts = []
-let filteredProducts = []
-let currentFilter = 'all'
-let currentSort = 'newest'
-let selectedProduct = null
+// Data produk statis (pengganti Supabase)
+const allProducts = [
+  // Keycaps
+  {
+    id: 'keycaps-01',
+    name: 'Nekomech Topographic Engraved',
+    category: 'keycaps',
+    description: 'Elevate your keyboard with this unique set featuring an intricate topographic engraved design with durable PBT material for a premium feel.',
+    price: 199000,
+    imageUrl: './public/products/nekomech-keycap.jpeg',
+    createdAt: '2025-10-01T10:00:00Z',
+  },
+  {
+    id: 'keycaps-02',
+    name: 'Furycube South-facing Contours',
+    category: 'keycaps',
+    description: 'Illuminate your setup with these futuristic keycaps, designed with translucent legends that are perfect for south-facing RGB keyboards.',
+    price: 238900,
+    imageUrl: './public/products/furycube-keycap.jpeg',
+    createdAt: '2025-09-30T10:00:00Z',
+  },
+  {
+    id: 'keycaps-03',
+    name: 'Gundam Unicorn Japanese',
+    category: 'keycaps',
+    description: 'Showcase your love for mecha anime with this artisan keycap inspired by the iconic Gundam Unicorn, featuring crisp Japanese characters.',
+    price: 329000,
+    imageUrl: './public/products/gundam-unicorn.jpeg',
+    createdAt: '2025-09-29T10:00:00Z',
+  },
+  // Keyboards
+  {
+    id: 'keyboard-01',
+    name: 'Rexus Heroic KX3',
+    category: 'keyboards',
+    description: 'A compact 68-key layout with anti-ghosting, dual-tone keycaps, and a detachable USB Type-C cable, perfect for gamers seeking both style and function.',
+    price: 290000,
+    imageUrl: './public/products/rexus-keyboard.png',
+    createdAt: '2025-10-02T10:00:00Z',
+  },
+  {
+    id: 'keyboard-02',
+    name: 'Vusign LED Wired Mechanical',
+    category: 'keyboards',
+    description: 'Features a full-size layout with 7-color LED backlighting, an integrated wrist rest, and multimedia hot-keys for a comfortable experience.',
+    price: 219000,
+    imageUrl: './public/products/deli-vusign.png',
+    createdAt: '2025-09-28T10:00:00Z',
+  },
+  {
+    id: 'keyboard-03',
+    name: 'Gamen Titan Pro',
+    category: 'keyboards',
+    description: 'Built with a durable aluminum frame, a 5-layer gasket structure for quiet typing, and multifunction knob to control RGB lighting and volume.',
+    price: 699000,
+    imageUrl: './public/products/gamen-titan.png',
+    createdAt: '2025-09-27T10:00:00Z',
+  },
+  // Switches
+  {
+    id: 'switch-01',
+    name: 'Cherry MX Hyperglide',
+    category: 'switches',
+    description: 'Experience the legendary smoothness of Cherry MX, now upgraded with Hyperglide tooling for reduced friction and enhanced durability.',
+    price: 40000,
+    imageUrl: './public/products/cherry-mx.png',
+    createdAt: '2025-10-03T10:00:00Z',
+  },
+  {
+    id: 'switch-02',
+    name: 'C³ Equalz x TKC Tangerine',
+    category: 'switches',
+    description: 'Famous for their incredibly smooth linear travel and vibrant orange housing. These switches provide a buttery-smooth typing experience.',
+    price: 45000,
+    imageUrl: './public/products/equalz.png',
+    createdAt: '2025-09-26T10:00:00Z',
+  },
+  {
+    id: 'switch-03',
+    name: 'Shogoki Tactile',
+    category: 'switches',
+    description: 'Designed for a satisfying typing feel, these switches offer a sharp and pronounced tactile bump with every keystroke, ensuring precision.',
+    price: 39000,
+    imageUrl: './public/products/shogoki-switch.png',
+    createdAt: '2025-09-25T10:00:00Z',
+  },
+  // Merchandise
+  {
+    id: 'stabilizer-01',
+    name: 'MoYu.Studios Screw-In',
+    category: 'stabilizers',
+    description: 'Precision-engineered screw-in stabilizers designed to minimize rattle and provide a consistent feel for your spacebar and modifier keys.',
+    price: 780000,
+    imageUrl: './public/products/moyu-stabilizer.png',
+    createdAt: '2025-09-24T10:00:00Z',
+  },
+  {
+    id: 'stabilizer-02',
+    name: 'TX Stabilizer Rev 3.0',
+    category: 'stabilizers',
+    description: 'The latest revision of the popular TX stabilizers, featuring a patented doubleshot stem for a tighter fit to reduce wobble and unwanted noise.',
+    price: 1750000,
+    imageUrl: './public/products/tx-stabilizer.webp',
+    createdAt: '2025-09-23T10:00:00Z',
+  },
+  {
+    id: 'stabilizer-03',
+    name: 'Lubcon Turmotemp II/400',
+    category: 'stabilizers',
+    description: 'A premium-grade lubricant ideal for stabilizer wires and housings. This grease effectively eliminates rattle and ensures ultra-smooth operation.',
+    price: 40000,
+    imageUrl: './public/products/lubcon-stabilizer.png',
+    createdAt: '2025-09-22T10:00:00Z',
+  },
+];
 
+let filteredProducts = [];
+let currentFilter = 'all';
+let currentSort = 'newest';
+
+// Fungsi untuk format harga ke Rupiah
 function formatPrice(price) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).replace('IDR', 'Rp')
+  }).format(price);
 }
 
-async function loadProducts() {
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-
-    allProducts = data
-    filterProducts(currentFilter)
-    loadFeaturedProducts()
-  } catch (error) {
-    console.error('Error loading products:', error)
-    document.getElementById('products-grid').innerHTML =
-      '<div class="loading">Failed to load products. Please try again later.</div>'
-  }
+// Fungsi untuk membuat link WhatsApp
+function createWhatsAppLink(product) {
+  const message = `Hello, I'm interested in ordering the following product:\n\n*Product:* ${product.name}\n*Price:* ${formatPrice(product.price)}\n\nPlease let me know the next steps. Thank you!`;
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
-async function loadFeaturedProducts() {
-  const featuredGrid = document.getElementById('featured-products')
-  const featured = allProducts.filter(p => p.featured).slice(0, 3)
-
-  if (featured.length === 0) {
-    featuredGrid.innerHTML = '<div class="loading">No featured products at the moment.</div>'
-    return
-  }
-
-  featuredGrid.innerHTML = featured.map(product => createProductCard(product)).join('')
-  attachOrderButtonListeners()
-}
-
+// Fungsi untuk membuat kartu produk
 function createProductCard(product) {
   return `
     <div class="product-card" data-category="${product.category}">
-      <img src="${product.image_url}" alt="${product.name}" class="product-image" />
+      <img src="${product.imageUrl}" alt="${product.name}" class="product-image" />
       <div class="product-info">
         <span class="product-category">${product.category}</span>
         <h3 class="product-name">${product.name}</h3>
         <p class="product-description">${product.description}</p>
         <div class="product-footer">
           <span class="product-price">${formatPrice(product.price)}</span>
-          <span class="product-stock">Stock: ${product.stock}</span>
         </div>
-        <button class="btn btn-primary order-btn"
-                data-product-id="${product.id}"
-                ${product.stock === 0 ? 'disabled' : ''}>
-          ${product.stock === 0 ? 'Out of Stock' : 'Order Now'}
-        </button>
+        <a href="${createWhatsAppLink(product)}" target="_blank" class="btn btn-primary order-btn">
+          Order Now
+        </a>
       </div>
     </div>
-  `
+  `;
 }
 
+// Fungsi untuk menampilkan produk
 function displayProducts(products) {
-  const grid = document.getElementById('products-grid')
-  const countText = document.getElementById('product-count-text')
+  const grid = document.getElementById('products-grid');
+  const countText = document.getElementById('product-count-text');
+
+  if (!grid || !countText) return;
 
   if (products.length === 0) {
-    grid.innerHTML = '<div class="loading">No products found in this category.</div>'
-    countText.textContent = '0 products'
-    return
+    grid.innerHTML = '<div class="loading">No products found in this category.</div>';
+    countText.textContent = '0 products';
+    return;
   }
 
-  countText.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`
-  grid.innerHTML = products.map(product => createProductCard(product)).join('')
-  attachOrderButtonListeners()
+  countText.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+  grid.innerHTML = products.map(product => createProductCard(product)).join('');
 }
 
-function attachOrderButtonListeners() {
-  document.querySelectorAll('.order-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const productId = e.target.dataset.productId
-      const product = allProducts.find(p => p.id === productId)
-      if (product) {
-        openOrderModal(product)
-      }
-    })
-  })
-}
-
+// Fungsi untuk memfilter produk
 function filterProducts(category) {
-  currentFilter = category
+  currentFilter = category;
 
   document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.remove('active')
-  })
-  document.querySelector(`[data-filter="${category}"]`).classList.add('active')
-
-  if (category === 'all') {
-    filteredProducts = [...allProducts]
-  } else {
-    filteredProducts = allProducts.filter(p => p.category === category)
+    btn.classList.remove('active');
+  });
+  const activeButton = document.querySelector(`[data-filter="${category}"]`);
+  if (activeButton) {
+    activeButton.classList.add('active');
   }
 
-  sortProducts(currentSort)
+  if (category === 'all') {
+    filteredProducts = [...allProducts];
+  } else {
+    filteredProducts = allProducts.filter(p => p.category === category);
+  }
+
+  sortProducts(currentSort);
 }
 
+// Fungsi untuk mengurutkan produk
 function sortProducts(sortBy) {
-  currentSort = sortBy
+  currentSort = sortBy;
 
-  let sorted = [...filteredProducts]
+  let sorted = [...filteredProducts];
 
   switch (sortBy) {
     case 'price-low':
-      sorted.sort((a, b) => a.price - b.price)
-      break
+      sorted.sort((a, b) => a.price - b.price);
+      break;
     case 'price-high':
-      sorted.sort((a, b) => b.price - a.price)
-      break
+      sorted.sort((a, b) => b.price - a.price);
+      break;
     case 'name':
-      sorted.sort((a, b) => a.name.localeCompare(b.name))
-      break
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+      break;
     case 'newest':
     default:
-      sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      break
+      sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      break;
   }
 
-  displayProducts(sorted)
+  displayProducts(sorted);
 }
 
-function openOrderModal(product) {
-  selectedProduct = product
-  const modal = document.getElementById('order-modal')
-  const productInfo = document.getElementById('modal-product-info')
+// --- Setup Event Listeners ---
+function setupNavigation() {
+  const mobileToggle = document.querySelector('.mobile-menu-toggle');
+  const navMenu = document.querySelector('.nav-menu');
 
-  productInfo.innerHTML = `
-    <div class="modal-product-name">${product.name}</div>
-    <div class="modal-product-price">${formatPrice(product.price)}</div>
-  `
-
-  document.getElementById('quantity').value = 1
-  updateOrderTotal()
-  modal.classList.add('active')
-}
-
-function closeOrderModal() {
-  const modal = document.getElementById('order-modal')
-  modal.classList.remove('active')
-  document.getElementById('order-form').reset()
-  selectedProduct = null
-}
-
-function updateOrderTotal() {
-  if (!selectedProduct) return
-
-  const quantity = parseInt(document.getElementById('quantity').value) || 1
-  const total = selectedProduct.price * quantity
-  document.getElementById('order-total').textContent = formatPrice(total)
-}
-
-async function submitOrder(e) {
-  e.preventDefault()
-
-  if (!selectedProduct) return
-
-  const formData = {
-    customer_name: document.getElementById('customer-name').value,
-    customer_email: document.getElementById('customer-email').value,
-    customer_phone: document.getElementById('customer-phone').value,
-    customer_address: document.getElementById('customer-address').value,
-    product_id: selectedProduct.id,
-    quantity: parseInt(document.getElementById('quantity').value),
-    total_price: selectedProduct.price * parseInt(document.getElementById('quantity').value),
-    notes: document.getElementById('order-notes').value,
-    status: 'pending'
-  }
-
-  try {
-    const submitBtn = e.target.querySelector('button[type="submit"]')
-    submitBtn.disabled = true
-    submitBtn.textContent = 'Processing...'
-
-    const { data, error } = await supabase
-      .from('orders')
-      .insert([formData])
-      .select()
-
-    if (error) throw error
-
-    alert('Order placed successfully! We will contact you soon.')
-    closeOrderModal()
-
-  } catch (error) {
-    console.error('Error submitting order:', error)
-    alert('Failed to place order. Please try again.')
-  } finally {
-    const submitBtn = e.target.querySelector('button[type="submit"]')
-    if (submitBtn) {
-      submitBtn.disabled = false
-      submitBtn.textContent = 'Place Order'
-    }
-  }
-}
-
-  function setupNavigation() {
-    const mobileToggle = document.querySelector('.mobile-menu-toggle');
-    const navMenu = document.querySelector('.nav-menu');
-
+  if (mobileToggle && navMenu) {
     mobileToggle.addEventListener('click', () => {
       navMenu.classList.toggle('active');
     });
-
-    document.querySelectorAll('.nav-menu a').forEach(link => {
-      if (link.pathname === window.location.pathname) {
-        link.classList.add('active');
-      }
-    });
-
-    document.querySelectorAll('.nav-menu a').forEach(link => {
-      link.addEventListener('click', () => {
-        navMenu.classList.remove('active');
-      });
-    });
   }
-
-function setupModal() {
-  const modal = document.getElementById('order-modal')
-  const closeBtn = document.querySelector('.modal-close')
-
-  closeBtn.addEventListener('click', closeOrderModal)
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      closeOrderModal()
-    }
-  })
-
-  document.getElementById('quantity').addEventListener('input', updateOrderTotal)
-  document.getElementById('order-form').addEventListener('submit', submitOrder)
 }
 
-function setupProductFilters() {
+function setupProductPage() {
+  // Setup filter buttons
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const filter = btn.dataset.filter
-      filterProducts(filter)
-    })
-  })
+      const filter = btn.dataset.filter;
+      filterProducts(filter);
+    });
+  });
 
-  document.getElementById('sort-select').addEventListener('change', (e) => {
-    sortProducts(e.target.value)
-  })
+  // Setup sort dropdown
+  const sortSelect = document.getElementById('sort-select');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', (e) => {
+      sortProducts(e.target.value);
+    });
+  }
+  
+  // Tampilkan semua produk saat pertama kali halaman dimuat
+  filterProducts('all');
 }
 
+// Inisialisasi saat halaman selesai dimuat
 document.addEventListener('DOMContentLoaded', () => {
-  setupNavigation()
-  setupProductFilters()
-  setupModal()
-  loadProducts()
-})
+  setupNavigation();
+  setupProductPage();
+});
