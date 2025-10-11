@@ -425,6 +425,7 @@ section {
 .custom-content {
   max-width: 800px;
   margin: 0 auto;
+  padding: 20px;
 }
 
 .custom-description {
@@ -436,10 +437,11 @@ section {
 
 .custom-features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   margin-bottom: 48px;
   text-align: left;
+  padding: 0 10px;
 }
 
 .custom-feature {
@@ -700,7 +702,7 @@ section {
   }
 
   .custom-features {
-    grid-template-columns: 1fr;
+    padding: 0 20px;
   }
 
   .footer-content {
