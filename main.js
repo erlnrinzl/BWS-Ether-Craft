@@ -174,10 +174,18 @@ function setupNavigation() {
   })
 
   document.querySelectorAll('.nav-menu a').forEach(link => {
+    if (link.pathname === window.location.pathname) {
+      link.classList.add('active');
+    }
+  });
+
+  document.querySelectorAll('.nav-menu a').forEach(link => {
     link.addEventListener('click', () => {
       navMenu.classList.remove('active')
     })
   })
+
+
 
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
