@@ -490,6 +490,11 @@ section {
   margin-bottom: 20px;
 }
 
+.contact-item:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
 .contact-item{
   background: white;
   padding: 40px;
@@ -758,7 +763,46 @@ section {
   margin-top: 4px;
 }
 
+/* --- Promo Section --- */
+.promo-section {
+  padding-top: 0; /* Menghapus padding atas agar tidak terlalu jauh */
+}
 
+.promo-banner {
+  background: var(--secondary-color); /* Gradien oranye */
+  color: white;
+  padding: 40px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.promo-banner h3 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.promo-banner p {
+  font-size: 18px;
+  margin-bottom: 32px;
+  opacity: 0.95;
+}
+
+.promo-banner .btn-promo {
+  background: white;
+  color: var(--primary-color); /* Teks warna gelap */
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  cursor: default; /* Membuat cursor tidak berubah karena tidak ada aksi */
+}
+
+.promo-banner .btn-promo:hover {
+  /* Menghilangkan efek hover karena tidak ada aksi */
+  transform: none;
+  box-shadow: var(--shadow);
+  background: white;
+}
 
 @media (max-width: 768px) {
   .mobile-menu-toggle {
