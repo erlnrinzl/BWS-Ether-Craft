@@ -481,8 +481,21 @@ section {
 
 .contact-info {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2,1fr);
   gap: 40px;
+}
+
+.contact-icon{
+  color: #e67e22;
+  margin-bottom: 20px;
+}
+
+.contact-item{
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  text-align: center;
 }
 
 .contact-item h3 {
@@ -497,49 +510,68 @@ section {
 }
 
 .footer {
-  background: var(--primary-color);
-  color: white;
-  padding: 48px 0 24px;
+  background: var(--primary-color); /* Warna latar belakang gelap */
+  color: white; /* Warna teks putih */
+  padding: 60px 0 24px;
 }
 
 .footer-content {
   display: flex;
-  flex-direction: column;
-  text-align: center;
   justify-content: space-between;
-  align-items: center;
+  gap: 48px;
+  padding-bottom: 48px;
   margin-bottom: 32px;
-  flex-wrap: wrap;
-  gap: 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.footer-brand p {
-  margin-top: 8px;
-  opacity: 0.8;
+.footer-brand {
+  max-width: 500px;
 }
 
-.footer-links {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.footer-links a {
+.logo-text-footer {
   color: white;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+.footer-description {
+  margin-top: 16px;
+  color: white;
+  opacity: 0.7;
+  line-height: 1.7;
+}
+
+.footer-link-groups {
+  display: flex;
+  gap: 60px;
+}
+
+.footer-link-column h4 {
+  font-size: 18px;
+  color: white;
+  margin-bottom: 20px;
+  opacity: 0.9;
+}
+
+.footer-link-column a {
+  display: block;
   text-decoration: none;
-  opacity: 0.8;
+  color: white;
+  opacity: 0.7;
+  margin-bottom: 12px;
   transition: var(--transition);
 }
 
-.footer-links a:hover {
+.footer-link-column a:hover {
   opacity: 1;
 }
 
 .footer-bottom {
   text-align: center;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  opacity: 0.8;
+  padding-top: 0;
+  border-top: none;
+  opacity: 0.7;
 }
 
 .modal {
@@ -679,10 +711,30 @@ section {
 
 .review-card {
   background: white;
-  padding: 32px;
+  padding: 40px 24px;
   border-radius: 12px;
   box-shadow: var(--shadow);
+  text-align: center;
   border-left: 4px solid var(--accent-color);
+}
+
+.review-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 16px;
+  border: 3px solid var(--border-color);
+}
+
+.review-rating {
+  color: #f39c12;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.review-rating span {
+  margin: 0 2px;
 }
 
 .review-quote {
@@ -693,9 +745,20 @@ section {
 }
 
 .review-author {
-  font-weight: 600;
+  display: block;
+  font-weight: 700;
+  font-size: 18px;
   color: var(--primary-color);
 }
+
+.review-location {
+  display: block;
+  font-size: 14px;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+
 
 @media (max-width: 768px) {
   .mobile-menu-toggle {
@@ -747,6 +810,29 @@ section {
     padding: 0 20px;
   }
 
+  .footer-content {
+    flex-direction: column; /* Menumpuk brand dan link secara vertikal */
+    align-items: flex-start; /* Membuat semua rata kiri */
+    text-align: left;
+    gap: 40px;
+  }
+
+  .footer-brand {
+    max-width: none;
+  }
+
+
+  .footer-link-groups {
+    flex-direction: column; /* Menumpuk kolom link */
+    gap: 40px;
+    width: 100%;
+  }
+  
+  .footer-bottom {
+    text-align: center; /* Tetap rata tengah untuk copyright */
+  }
+  
+
   .modal-content {
     padding: 24px;
   }
@@ -758,6 +844,11 @@ section {
   .reviews-grid {
     grid-template-columns: repeat(1, 1fr);
   }
+
+  .contact-info{
+    padding: 0 30px;
+  }
+  
 }
 
 @media (max-width: 480px) {
@@ -880,7 +971,7 @@ section {
 
 .offerings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2,1fr);
   gap: 32px;
   margin-top: 40px;
 }

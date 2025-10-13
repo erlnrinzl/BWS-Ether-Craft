@@ -1,5 +1,6 @@
 import './style.css';
-import { allProducts, whatsappNumber } from './product-data';
+// Pastikan path ini benar jika Anda memindahkan file
+import { allProducts, whatsappNumber } from './product-data.js';
 
 
 let filteredProducts = [];
@@ -122,7 +123,8 @@ function setupProductPage() {
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const filter = btn.dataset.filter;
-      filterProducts(filter);
+      // Update hash di URL saat tombol filter diklik
+      window.location.hash = filter;
     });
   });
 
@@ -133,13 +135,28 @@ function setupProductPage() {
       sortProducts(e.target.value);
     });
   }
-  
-  // Tampilkan semua produk saat pertama kali halaman dimuat
-  filterProducts('all');
 }
 
-// Inisialisasi saat halaman selesai dimuat
+// --- Inisialisasi ---
 document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   setupProductPage();
+
+  // Fungsi untuk mengecek hash dan memfilter produk
+  const handleHashChange = () => {
+    const categoryFromHash = window.location.hash.substring(1);
+    const validCategories = ['all', 'keyboards', 'keycaps', 'switches', 'stabilizers'];
+
+    if (categoryFromHash && validCategories.includes(categoryFromHash)) {
+      filterProducts(categoryFromHash);
+    } else {
+      filterProducts('all'); // Default ke 'all' jika hash tidak valid
+    }
+  };
+  
+  // Panggil saat halaman pertama kali dimuat
+  handleHashChange();
+  
+  // Tambahkan listener untuk mendeteksi perubahan hash (jika pengguna mengklik tombol filter)
+  window.addEventListener('hashchange', handleHashChange);
 });
