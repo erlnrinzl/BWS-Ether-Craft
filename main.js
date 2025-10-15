@@ -8,10 +8,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 3. Variabel global
-let allProducts = [];
-let filteredProducts = [];
-let currentFilter = 'all';
-let currentSort = 'newest';
+let allProducts = []; // Akan diisi dari Supabase
 let selectedProduct = null;
 const whatsappNumber = '6281234567890';
 
@@ -92,7 +89,8 @@ function setupModal() {
   document.getElementById('order-form').addEventListener('submit', submitOrder);
 }
 
-// --- FUNGSI UNTUK HALAMAN PRODUK ---
+
+// --- FUNGSI UNTUK MENAMPILKAN PRODUK DI HOME ---
 
 function formatPrice(price) {
   return new Intl.NumberFormat('id-ID', {
@@ -122,21 +120,28 @@ function createProductCard(product) {
   `;
 }
 
-function displayProducts(products) {
+// Fungsi ini akan dijalankan setelah data dari Supabase dimuat
+function displayHomepageProducts() {
   const grid = document.getElementById('products-grid');
-  const countText = document.getElementById('product-count-text');
-  if (!grid || !countText) return;
+  if (!grid) return;
 
-  if (products.length === 0) {
-    grid.innerHTML = '<div class="loading">No products found in this category.</div>';
-    countText.textContent = '0 products';
+  // Logika untuk memilih 6 produk
+  const keyboards = allProducts.filter(p => p.category === 'keyboards').slice(0, 2);
+  const keycaps = allProducts.filter(p => p.category === 'keycaps').slice(0, 2);
+  const switches = allProducts.filter(p => p.category === 'switches').slice(0, 1);
+  const stabilizers = allProducts.filter(p => p.category === 'stabilizers').slice(0, 1);
+
+  const productsToDisplay = [...keyboards, ...keycaps, ...switches, ...stabilizers];
+
+  if (productsToDisplay.length === 0) {
+    grid.innerHTML = '<div class="loading">No products to display.</div>';
     return;
   }
 
-  countText.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
-  grid.innerHTML = products.map(product => createProductCard(product)).join('');
+  grid.innerHTML = productsToDisplay.map(product => createProductCard(product)).join('');
 
-  document.querySelectorAll('.order-btn').forEach(btn => {
+  // Tambahkan event listener ke tombol "Order Now"
+  document.querySelectorAll('#products-grid .order-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const productId = btn.dataset.productId;
       const product = allProducts.find(p => p.id === productId);
@@ -147,60 +152,58 @@ function displayProducts(products) {
   });
 }
 
-function filterProducts(category) {
-  currentFilter = category;
-  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-  const activeButton = document.querySelector(`[data-filter="${category}"]`);
-  if (activeButton) activeButton.classList.add('active');
-  filteredProducts = category === 'all' ? [...allProducts] : allProducts.filter(p => p.category === category);
-  sortProducts(currentSort);
-}
-
-function sortProducts(sortBy) {
-  currentSort = sortBy;
-  let sorted = [...filteredProducts];
-  switch (sortBy) {
-    case 'price-low': sorted.sort((a, b) => a.price - b.price); break;
-    case 'price-high': sorted.sort((a, b) => b.price - a.price); break;
-    case 'name': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
-    default: sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); break;
-  }
-  displayProducts(sorted);
-}
+// --- FUNGSI SETUP LAINNYA ---
 
 function setupNavigation() {
   const mobileToggle = document.querySelector('.mobile-menu-toggle');
   const navMenu = document.querySelector('.nav-menu');
-  if (mobileToggle && navMenu) {
-    mobileToggle.addEventListener('click', () => navMenu.classList.toggle('active'));
-  }
-}
 
-function setupProductPage() {
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.hash = btn.dataset.filter;
+  if (mobileToggle && navMenu) {
+    mobileToggle.addEventListener('click', () => {
+      navMenu.classList.toggle('active');
+    });
+  }
+  document.querySelectorAll('.nav-menu a').forEach(link => {
+    if (link.pathname === window.location.pathname || (window.location.pathname === '/' && (link.pathname === '/index.html' || link.pathname === '/'))) {
+      link.classList.add('active');
+    }
+  });
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        const offset = 70;
+        const targetPosition = target.offsetTop - offset;
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        });
+      }
     });
   });
-  const sortSelect = document.getElementById('sort-select');
-  if (sortSelect) {
-    sortSelect.addEventListener('change', (e) => sortProducts(e.target.value));
+}
+
+function setupCustomBuildButton() {
+  const customBuildBtn = document.getElementById('custom-build-btn');
+  if (customBuildBtn) {
+    const message = 'Hello! I am interested in your custom keyboard build service.';
+    customBuildBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    });
   }
 }
 
 // --- INISIALISASI ---
 
-async function loadAllProducts() {
+async function loadData() {
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-      
+    const { data, error } = await supabase.from('products').select('*');
     if (error) throw error;
-    allProducts = data;
-    
-    handleHashChange();
+    allProducts = data; 
+    displayHomepageProducts(); 
   } catch (error) {
     console.error('Error loading products:', error);
     const grid = document.getElementById('products-grid');
@@ -210,22 +213,9 @@ async function loadAllProducts() {
   }
 }
 
-const handleHashChange = () => {
-  const category = window.location.hash.substring(1) || 'all';
-  const validCategories = ['all', 'keyboards', 'keycaps', 'switches', 'stabilizers'];
-
-  if (validCategories.includes(category)) {
-    filterProducts(category);
-  } else {
-    filterProducts('all');
-  }
-};
-
 document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
-  setupProductPage();
+  setupCustomBuildButton();
   setupModal();
-  loadAllProducts(); 
-  
-  window.addEventListener('hashchange', handleHashChange);
+  loadData(); 
 });
