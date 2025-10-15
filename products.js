@@ -110,9 +110,12 @@ function createProductCard(product) {
         <p class="product-description">${product.description}</p>
         <div class="product-footer">
           <span class="product-price">${formatPrice(product.price)}</span>
+          <span class="product-stock">Stock: ${product.stock}</span>
         </div>
-        <button class="btn btn-primary order-btn" data-product-id="${product.id}">
-          Order Now
+        <button class="btn btn-primary order-btn" 
+                data-product-id="${product.id}" 
+                ${product.stock === 0 ? 'disabled' : ''}>
+          ${product.stock === 0 ? 'Out of Stock' : 'Order Now'}
         </button>
       </div>
     </div>
