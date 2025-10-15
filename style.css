@@ -285,6 +285,11 @@ section {
   box-shadow: var(--shadow-lg);
 }
 
+.review-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
 .feature-icon {
   font-size: 48px;
   margin-bottom: 24px;
