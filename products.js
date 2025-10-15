@@ -1,10 +1,21 @@
 import './style.css';
-import { allProducts, whatsappNumber } from './product-data.js';
+// 1. Impor Supabase
+import { createClient } from '@supabase/supabase-js';
 
+// 2. Koneksi ke Supabase
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// 3. Variabel global
+let allProducts = [];
 let filteredProducts = [];
 let currentFilter = 'all';
 let currentSort = 'newest';
 let selectedProduct = null;
+const whatsappNumber = '6281234567890';
+
+// --- FUNGSI UNTUK MODAL PEMESANAN ---
 
 function openOrderModal(product) {
   selectedProduct = product;
@@ -35,7 +46,6 @@ function updateOrderTotal() {
   document.getElementById('order-total').textContent = formatPrice(total);
 }
 
-// Fungsi ini sekarang akan mengirim data ke WhatsApp
 function submitOrder(e) {
   e.preventDefault();
   if (!selectedProduct) return;
@@ -82,14 +92,18 @@ function setupModal() {
   document.getElementById('order-form').addEventListener('submit', submitOrder);
 }
 
+// --- FUNGSI UNTUK HALAMAN PRODUK ---
 
-// --- FUNGSI-FUNGSI YANG DIMODIFIKASI ---
+function formatPrice(price) {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0
+  }).format(price);
+}
 
 function createProductCard(product) {
-  // Mengubah dari <a> ke <button>
   return `
     <div class="product-card" data-category="${product.category}">
-      <img src="${product.imageUrl}" alt="${product.name}" class="product-image" />
+      <img src="${product.image_url}" alt="${product.name}" class="product-image" />
       <div class="product-info">
         <span class="product-category">${product.category}</span>
         <h3 class="product-name">${product.name}</h3>
@@ -111,7 +125,7 @@ function displayProducts(products) {
   if (!grid || !countText) return;
 
   if (products.length === 0) {
-    grid.innerHTML = '<div class="loading">No products found.</div>';
+    grid.innerHTML = '<div class="loading">No products found in this category.</div>';
     countText.textContent = '0 products';
     return;
   }
@@ -119,7 +133,6 @@ function displayProducts(products) {
   countText.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
   grid.innerHTML = products.map(product => createProductCard(product)).join('');
 
-  // Menambahkan event listener ke setiap tombol "Order Now" yang baru dibuat
   document.querySelectorAll('.order-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const productId = btn.dataset.productId;
@@ -129,14 +142,6 @@ function displayProducts(products) {
       }
     });
   });
-}
-
-// --- FUNGSI LAINNYA (TETAP SAMA) ---
-
-function formatPrice(price) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0
-  }).format(price);
 }
 
 function filterProducts(category) {
@@ -155,7 +160,7 @@ function sortProducts(sortBy) {
     case 'price-low': sorted.sort((a, b) => a.price - b.price); break;
     case 'price-high': sorted.sort((a, b) => b.price - a.price); break;
     case 'name': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
-    default: sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); break;
+    default: sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); break;
   }
   displayProducts(sorted);
 }
@@ -180,16 +185,44 @@ function setupProductPage() {
   }
 }
 
+// --- INISIALISASI ---
+
+async function loadAllProducts() {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    allProducts = data;
+    
+    handleHashChange();
+  } catch (error) {
+    console.error('Error loading products:', error);
+    const grid = document.getElementById('products-grid');
+    if (grid) {
+      grid.innerHTML = '<div class="loading">Failed to load products. Please try again later.</div>';
+    }
+  }
+}
+
+const handleHashChange = () => {
+  const category = window.location.hash.substring(1) || 'all';
+  const validCategories = ['all', 'keyboards', 'keycaps', 'switches', 'stabilizers'];
+
+  if (validCategories.includes(category)) {
+    filterProducts(category);
+  } else {
+    filterProducts('all');
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   setupProductPage();
-  setupModal(); // Panggil fungsi setup untuk modal
-
-  const handleHashChange = () => {
-    const category = window.location.hash.substring(1) || 'all';
-    filterProducts(category);
-  };
+  setupModal();
+  loadAllProducts(); 
   
-  handleHashChange();
   window.addEventListener('hashchange', handleHashChange);
 });

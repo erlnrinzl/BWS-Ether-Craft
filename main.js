@@ -1,11 +1,21 @@
 import './style.css';
-// 1. Impor data produk dan nomor WhatsApp
-import { allProducts, whatsappNumber } from './product-data.js';
+// 1. Impor Supabase
+import { createClient } from '@supabase/supabase-js';
 
-// 2. Variabel untuk menyimpan produk yang dipilih
+// 2. Koneksi ke Supabase
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// 3. Variabel global
+let allProducts = [];
+let filteredProducts = [];
+let currentFilter = 'all';
+let currentSort = 'newest';
 let selectedProduct = null;
+const whatsappNumber = '6281234567890';
 
-// --- 3. FUNGSI UNTUK MODAL PEMESANAN ---
+// --- FUNGSI UNTUK MODAL PEMESANAN ---
 
 function openOrderModal(product) {
   selectedProduct = product;
@@ -36,7 +46,6 @@ function updateOrderTotal() {
   document.getElementById('order-total').textContent = formatPrice(total);
 }
 
-// Fungsi ini akan mengumpulkan data dari form dan mengirimnya ke WhatsApp
 function submitOrder(e) {
   e.preventDefault();
   if (!selectedProduct) return;
@@ -66,7 +75,6 @@ function submitOrder(e) {
   closeOrderModal();
 }
 
-// Fungsi untuk setup event listener modal
 function setupModal() {
   const modal = document.getElementById('order-modal');
   if (!modal) return;
@@ -84,8 +92,7 @@ function setupModal() {
   document.getElementById('order-form').addEventListener('submit', submitOrder);
 }
 
-
-// --- 4. FUNGSI UNTUK MENAMPILKAN PRODUK DI HOME ---
+// --- FUNGSI UNTUK HALAMAN PRODUK ---
 
 function formatPrice(price) {
   return new Intl.NumberFormat('id-ID', {
@@ -94,10 +101,9 @@ function formatPrice(price) {
 }
 
 function createProductCard(product) {
-  // Tombol "Order Now" akan memicu modal
   return `
     <div class="product-card" data-category="${product.category}">
-      <img src="${product.imageUrl}" alt="${product.name}" class="product-image" />
+      <img src="${product.image_url}" alt="${product.name}" class="product-image" />
       <div class="product-info">
         <span class="product-category">${product.category}</span>
         <h3 class="product-name">${product.name}</h3>
@@ -113,30 +119,21 @@ function createProductCard(product) {
   `;
 }
 
-// Fungsi baru untuk memilih dan menampilkan 6 produk
-function displayHomepageProducts() {
+function displayProducts(products) {
   const grid = document.getElementById('products-grid');
-  if (!grid) return;
+  const countText = document.getElementById('product-count-text');
+  if (!grid || !countText) return;
 
-  // Memilih produk sesuai permintaan Anda
-  const keyboards = allProducts.filter(p => p.category === 'keyboards').slice(0, 2);
-  const keycaps = allProducts.filter(p => p.category === 'keycaps').slice(0, 2);
-  const switches = allProducts.filter(p => p.category === 'switches').slice(0, 1);
-  const stabilizers = allProducts.filter(p => p.category === 'stabilizers').slice(0, 1);
-
-  // Menggabungkan 6 produk
-  const productsToDisplay = [...keyboards, ...keycaps, ...switches, ...stabilizers];
-
-  if (productsToDisplay.length === 0) {
-    grid.innerHTML = '<div class="loading">No products to display.</div>';
+  if (products.length === 0) {
+    grid.innerHTML = '<div class="loading">No products found in this category.</div>';
+    countText.textContent = '0 products';
     return;
   }
 
-  // Menampilkan produk ke grid
-  grid.innerHTML = productsToDisplay.map(product => createProductCard(product)).join('');
+  countText.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+  grid.innerHTML = products.map(product => createProductCard(product)).join('');
 
-  // Menambahkan event listener ke setiap tombol "Order Now"
-  document.querySelectorAll('#products-grid .order-btn').forEach(btn => {
+  document.querySelectorAll('.order-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const productId = btn.dataset.productId;
       const product = allProducts.find(p => p.id === productId);
@@ -147,57 +144,85 @@ function displayHomepageProducts() {
   });
 }
 
-// --- 5. FUNGSI SETUP LAINNYA ---
+function filterProducts(category) {
+  currentFilter = category;
+  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+  const activeButton = document.querySelector(`[data-filter="${category}"]`);
+  if (activeButton) activeButton.classList.add('active');
+  filteredProducts = category === 'all' ? [...allProducts] : allProducts.filter(p => p.category === category);
+  sortProducts(currentSort);
+}
+
+function sortProducts(sortBy) {
+  currentSort = sortBy;
+  let sorted = [...filteredProducts];
+  switch (sortBy) {
+    case 'price-low': sorted.sort((a, b) => a.price - b.price); break;
+    case 'price-high': sorted.sort((a, b) => b.price - a.price); break;
+    case 'name': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
+    default: sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); break;
+  }
+  displayProducts(sorted);
+}
 
 function setupNavigation() {
   const mobileToggle = document.querySelector('.mobile-menu-toggle');
   const navMenu = document.querySelector('.nav-menu');
-
   if (mobileToggle && navMenu) {
-    mobileToggle.addEventListener('click', () => {
-      navMenu.classList.toggle('active');
-    });
+    mobileToggle.addEventListener('click', () => navMenu.classList.toggle('active'));
   }
+}
 
-  document.querySelectorAll('.nav-menu a').forEach(link => {
-    if (link.pathname === window.location.pathname || (window.location.pathname === '/' && (link.pathname === '/index.html' || link.pathname === '/'))) {
-      link.classList.add('active');
+function setupProductPage() {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      window.location.hash = btn.dataset.filter;
+    });
+  });
+  const sortSelect = document.getElementById('sort-select');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', (e) => sortProducts(e.target.value));
+  }
+}
+
+// --- INISIALISASI ---
+
+async function loadAllProducts() {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    allProducts = data;
+    
+    handleHashChange();
+  } catch (error) {
+    console.error('Error loading products:', error);
+    const grid = document.getElementById('products-grid');
+    if (grid) {
+      grid.innerHTML = '<div class="loading">Failed to load products. Please try again later.</div>';
     }
-  });
-
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        const offset = 70;
-        const targetPosition = target.offsetTop - offset;
-        window.scrollTo({
-          top: targetPosition,
-          behavior: 'smooth'
-        });
-      }
-    });
-  });
-}
-
-function setupCustomBuildButton() {
-  const customBuildBtn = document.getElementById('custom-build-btn');
-  if (customBuildBtn) {
-    const message = 'Hello! I am interested in your custom keyboard build service.';
-    customBuildBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
-    });
   }
 }
 
-// --- 6. INISIALISASI ---
+const handleHashChange = () => {
+  const category = window.location.hash.substring(1) || 'all';
+  const validCategories = ['all', 'keyboards', 'keycaps', 'switches', 'stabilizers'];
+
+  if (validCategories.includes(category)) {
+    filterProducts(category);
+  } else {
+    filterProducts('all');
+  }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
-  setupCustomBuildButton();
-  displayHomepageProducts(); // Memanggil fungsi untuk menampilkan 6 produk
-  setupModal(); // Memanggil fungsi setup untuk modal
+  setupProductPage();
+  setupModal();
+  loadAllProducts(); 
+  
+  window.addEventListener('hashchange', handleHashChange);
 });
